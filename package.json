@@ -1,0 +1,46 @@
+{
+  "name": "saas-health-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:reset": "prisma migrate reset --force"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cloudwatch": "^3.1081.0",
+    "@prisma/client": "^6.19.3",
+    "bcryptjs": "^3.0.3",
+    "clsx": "^2.1.1",
+    "jose": "^6.2.3",
+    "next": "^15.5.20",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "recharts": "^3.9.2",
+    "stripe": "^22.3.0",
+    "tailwind-merge": "^3.6.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.2",
+    "@types/node": "^26.1.0",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "postcss": "^8.5.16",
+    "prisma": "^6.19.3",
+    "tailwindcss": "^4.3.2",
+    "tsx": "^4.23.0",
+    "typescript": "^6.0.3"
+  }
+}

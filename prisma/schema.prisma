@@ -1,0 +1,183 @@
+// SaaS Health Dashboard — data model
+//
+// Local dev uses SQLite for zero-setup runs. For production, change the
+// datasource `provider` to "postgresql" and convert the `String` JSON fields
+// (credentials/config/breakdown) to `Json`. The rest of the model is portable.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// The paying tenant. Owns branding + the product subscription.
+model Agency {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  customDomain String?
+
+  // Product billing (your own Stripe account) — wired in a later phase.
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  plan                 String  @default("trial") // trial | starter | growth
+  status               String  @default("active")
+
+  // White-label branding.
+  logoUrl      String?
+  primaryColor String  @default("#4f46e5")
+  accentColor  String  @default("#0ea5e9")
+  faviconUrl   String?
+
+  // Slack-compatible webhook for health/uptime alerts.
+  alertWebhookUrl String?
+
+  users       User[]
+  clients     Client[]
+  alertEvents AlertEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id       String @id @default(cuid())
+  email    String @unique
+  name     String?
+  role     String @default("member") // owner | admin | member
+  agencyId String
+  agency   Agency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  // Password-based auth (MVP).
+  // In production you may replace this with OAuth/email magic links.
+  passwordHash String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([agencyId])
+}
+
+// An account the agency manages. The unit shown on a dashboard.
+model Client {
+  id       String  @id @default(cuid())
+  agencyId String
+  agency   Agency  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  name     String
+  logoUrl  String?
+  website  String?
+  archived Boolean @default(false)
+
+  // Denormalized latest values for fast list rendering.
+  latestMrrCents       Int?
+  latestChurnRate      Float?
+  latestUptimePct      Float?
+  latestOpenDeals      Int?
+  latestPipelineCents  Int?
+  latestAwsAlarmPct    Float?
+  latestSyntheticsPct  Float?
+  latestErrorCount     Int?
+  healthScore          Int?
+  currency             String @default("usd")
+
+  integrations Integration[]
+  snapshots    MetricSnapshot[]
+  shareLinks   ShareLink[]
+  alertEvents  AlertEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([agencyId])
+}
+
+// A connected data source, scoped to a client.
+model Integration {
+  id       String @id @default(cuid())
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  provider String // stripe | uptime | aws | hubspot | datadog | sentry
+  status   String @default("connected") // connected | error | revoked
+
+  // Encrypted JSON blob (API keys / OAuth tokens / connected account id).
+  credentials String?
+  // Non-secret JSON config (e.g. uptime target URLs).
+  config      String?
+
+  lastSyncedAt DateTime?
+  lastError    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([clientId, provider])
+  @@index([clientId])
+}
+
+// Time-series metric values per client (pre-computed for fast reads).
+model MetricSnapshot {
+  id       String @id @default(cuid())
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  metric      String // mrr | churn | uptime | active_subs | health | pipeline | open_deals | aws_alarms | synthetics | errors
+  value       Float
+  capturedAt  DateTime
+  granularity String @default("daily") // daily | monthly
+
+  // Optional JSON breakdown (e.g. MRR movement components).
+  breakdown String?
+
+  createdAt DateTime @default(now())
+
+  @@index([clientId, metric, capturedAt])
+}
+
+// Revocable, tokenized read-only view of one client's dashboard.
+model ShareLink {
+  id       String @id @default(cuid())
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  token       String  @unique
+  enabled     Boolean @default(true)
+  expiresAt   DateTime?
+  viewCount   Int      @default(0)
+  lastViewedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([clientId])
+}
+
+// Alert history for agency notifications (Slack/webhook).
+model AlertEvent {
+  id       String @id @default(cuid())
+  agencyId String
+  agency   Agency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  severity String // warning | critical
+  kind     String // health | uptime | churn | aws | synthetics | errors
+  message  String
+  sent     Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([agencyId, createdAt])
+  @@index([clientId])
+}
+
+// Stripe webhook idempotency — claim event.id before Agency mutate (CaaS twin).
+model StripeWebhookEvent {
+  id          String   @id // Stripe event.id (evt_…)
+  type        String
+  status      String // processing | done
+  processedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+}

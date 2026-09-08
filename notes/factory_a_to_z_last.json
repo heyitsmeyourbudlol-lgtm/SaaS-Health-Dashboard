@@ -1,0 +1,33 @@
+{
+  "needle": "OVERSEER_NO_JUMP_UNTIL_A_TO_Z_2026_09_07",
+  "needle_ae": "OVERSEER_KIT_RUN_AE_2026_09_07",
+  "ts": "2026-09-08T03:59:30Z",
+  "repo": "F.I.R.E. Project",
+  "namespace": "fire-project",
+  "target": "/Users/togi/F.I.R.E. Project",
+  "ok": true,
+  "artifact_mode": "pr",
+  "pr_url": "https://github.com/heyitsmeyourbudlol-lgtm/FIRE-Project/pull/1",
+  "branch": "peer/kit-a-to-z-20260908T035519",
+  "worktree_path": "/Users/togi/F.I.R.E. Project-kit-a-to-z-20260908T035519",
+  "tip": "2ec9c7e",
+  "note": "eleventh registry target · empty .git seeded · origin wired · Mac gh PR · reaffirm …T035753 blocked_receipt superseded · NO PAY",
+  "steps": [
+    {"step": "A_adapt", "ok": true},
+    {"step": "B_verify", "ok": true},
+    {
+      "step": "C_worktree",
+      "ok": true,
+      "worktree_path": "/Users/togi/F.I.R.E. Project-kit-a-to-z-20260908T035519"
+    },
+    {
+      "step": "D_artifact",
+      "ok": true,
+      "mode": "pr",
+      "pr_url": "https://github.com/heyitsmeyourbudlol-lgtm/FIRE-Project/pull/1",
+      "branch": "peer/kit-a-to-z-20260908T035519",
+      "worktree_path": "/Users/togi/F.I.R.E. Project-kit-a-to-z-20260908T035519"
+    },
+    {"step": "E_writeback", "ok": true}
+  ]
+}
